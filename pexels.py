@@ -1,9 +1,9 @@
 #!usr/bin/env python
-# -*-coding:utf-8 -*-
-__author__='WYY'
-__date__='2017.03.22'
+__author__='jiemo'
+__date__='2019.07.19'
 
 #实战小项目：爬取pexels网站获取高清原图（做成图片下载器）
+# 修改了一些bug，同时改为python3版本
 import re
 import os
 import requests
@@ -12,7 +12,7 @@ import time
 
 class Spider():
     def __init__(self):
-        self.keyword=raw_input(u'欢迎使用 pexels 图片搜索下载神器\n请输入搜索关键词(英文)：')
+        self.keyword=input(u'欢迎使用 pexels 图片搜索下载神器\n请输入搜索关键词(英文)：')
         self.siteURL='https://www.pexels.com/search/'+str(self.keyword)+'/'
 
     def getSource(self,url):
@@ -21,26 +21,33 @@ class Spider():
 
     #获取图片页数
     def getPageNum(self):
-        result=self.getSource(url=self.siteURL)
-        pattern=re.compile('<span class="gap".*?<a href="/search/.*?>(.*?)</a> <a href="/search/.*?>(.*?)</a> <a class="next_page" rel="next"', re.S)
-        items=re.search(pattern,result)
-        if items.group(2)>=1:
-            print u'\n这个主题共有图片', items.group(2), u'页'
-        else:
-            print u'\n哎呀，木有您想要的图呢。。。'
-        return items.group(2)
-
+        try:
+            result=self.getSource(url=self.siteURL)
+        
+            pattern=re.compile('<span class="gap".*?<a href="/search/.*?>(.*?)</a> <a href="/search/.*?>(.*?)</a> <a class="next_page" rel="next"', re.S)
+            items=re.search(pattern,str(result))
+            groups=int(items.group(2))
+            if groups>=1:
+                print (u'\n这个主题共有图片', groups, u'页')
+            else:
+                print (u'\n哎呀，木有您想要的图呢。。。')
+            return groups
+        except:
+            print (u'\n哎呀，木有您想要的图呢。。。')
+            spider=Spider()
+            spider.saveMorePage()
     #获取链接部分
     def getPartLink(self,url):
         result=self.getSource(url)
         pattern1=re.compile(r'<img.*?data-pin-media="https://images.pexels.com/photos/(.*?)/(.*?)?w=800.*?>', re.S)
-        items=re.findall(pattern1, result)
+        items=re.findall(pattern1, str(result))
         return items
 
     #保存图片入文件
     def saveImage(self,detailURL,name):
-        fileName=name
-        string='F:\Desktop\code\pexels\%s\%s' % (self.path, fileName)
+        fileName=name.split("?")[0]
+        string='D:/Desktop/code/pexels/%s/%s' % (self.path, fileName)
+        print(string)
         E=os.path.exists(string)
         if not E:
             try:
@@ -61,23 +68,23 @@ class Spider():
                 f.write(picture.content)
                 f.close()
             except requests.exceptions.ConnectionError:
-                print 'Download error:requests.exceptions.ConnectionError'
+                print ('Download error:requests.exceptions.ConnectionError')
                 return None
         else:
-            print u'图片已经存在，跳过！'
+            print (u'图片已经存在，跳过！')
             return False
 
     #创建目录
     def makeDir(self, path):
         self.path=path.strip()
-        E=os.path.exists(os.path.join('F:\Desktop\code\pexels', self.path))
+        E=os.path.exists(os.path.join('D:\Desktop\code\pexels', self.path))
         if not E:
-            os.makedirs(os.path.join('F:\Desktop\code\pexels',self.path))
-            os.chdir(os.path.join('F:\Desktop\code\pexels',self.path))
-            print u'成功创建名为', self.path, u'的文件夹'
+            os.makedirs(os.path.join('D:\Desktop\code\pexels',self.path))
+            os.chdir(os.path.join('D:\Desktop\code\pexels',self.path))
+            print (u'成功创建名为', self.path, u'的文件夹')
             return self.path
         else:
-            print u'名为', self.path, u'的文件夹已经存在...'
+            print (u'名为', self.path, u'的文件夹已经存在...')
             return False
 
     #对一页的操作
@@ -87,7 +94,7 @@ class Spider():
         for item in items:
             #记得去掉后面的'?'
             detailURL='https://static.pexels.com/photos/'+item[0]+'/'+item[1][:-1]
-            print u'\n', u'正在下载并保存图片',i
+            print (u'\n', u'正在下载并保存图片',i)
             self.saveImage(detailURL,name=item[1][:-1])
             time.sleep(0.5)
             i+=1
@@ -95,11 +102,11 @@ class Spider():
     #对多页的操作
     def saveMorePage(self):
         Numbers=self.getPageNum()
-        Num=int(raw_input(u'一页共15张图，\n请输入要下载的页数(默认页数大于等于1）：'))
-        Start=int(raw_input(u'请输入下载起始页数：'))
+        Num=int(input(u'一页共15张图，\n请输入要下载的页数(默认页数大于等于1）：'))
+        Start=int(input(u'请输入下载起始页数：'))
         if Numbers>=1:
             for page in range(Start,Start+Num):
-                print u'\n',u'正在获取第',page, u'页的内容'
+                print (u'\n',u'正在获取第',page, u'页的内容')
                 self.url='https://www.pexels.com/search/'+str(self.keyword)+'/?page='+str(page)
                 self.makeDir(path=self.keyword+'Page'+str(page))
                 self.saveOnePage(oneURL=self.url)
@@ -107,7 +114,7 @@ class Spider():
         else:
             return False
 
-        print  u'\n',u'圆满成功!!!'
+        print  (u'\n',u'圆满成功!!!')
 
 spider=Spider()
 spider.saveMorePage()
